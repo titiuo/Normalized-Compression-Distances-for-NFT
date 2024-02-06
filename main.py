@@ -30,7 +30,6 @@ def getCollection(collection_name):
 
     return dict
 
-
 def ncd(x,y):
     x_y = x + y  # the concatenation of files
 
@@ -58,7 +57,6 @@ if __name__ == '__main__':
     
     collection_name = sys.argv[1]
     nft_id = int(sys.argv[2])
-    print(see_in_dict(collection_name,nft_id))
     if sys.argv[3]=="y":
         with open(collection_name,'rb') as f:
             collection_dict = pickle.load(f)
@@ -75,4 +73,5 @@ if __name__ == '__main__':
             dp.append((1-ncd(collection_dict[id][0],collection_dict[nft_id][0]),collection_dict[id][1])) #si nft_id pas dans la liste l'ajouter
             print(id)
     price=sum([d * p for d, p in dp])/sum([d for d,_  in dp])
-    print(price)
+    print(f"Prix estimé : {price}\nPrix réelle : {see_in_dict(collection_name,nft_id)[1]}")
+    
