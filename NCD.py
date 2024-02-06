@@ -17,10 +17,9 @@ def ncd(x,y):
     return ncd
 
 if __name__ == "__main__":
-    images={}
+    collection={}
     dp=[]
-    for hash in images:
+    for hash in collection:
         if hash != sys.argv[1]:
-            dp.append((1-ncd(images[hash][0],images[sys.argv[1]][0]),images[hash][1]))
+            dp.append((1-ncd(collection[hash][0],collection[sys.argv[1]][0]),collection[hash][1]))
     price=sum([d * p for d, p in dp])/sum([d for d,_  in dp])
-
