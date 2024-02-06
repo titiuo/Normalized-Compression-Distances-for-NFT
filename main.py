@@ -15,6 +15,8 @@ def getCollection(collection_name):
     response_stat = requests.get(url_stats, headers=headers)
     listed_count = int(response_stat.json()['listedCount'])
 
+    listed_count = 100
+
     for i in range(listed_count//100): #modifier le pas et filtrer les prix trop hauts / prendre en compte les ventes
         params = {"limit": 100,"offset":100*i}
         response = requests.get(url, headers=headers,params=params)
@@ -37,9 +39,6 @@ def ncd(x,y):
     y_comp = lzma.compress(y)  # compress file 2
     x_y_comp = lzma.compress(x_y)  # compress file concatenated
 
-    # print len() of each file
-    print(len(x_comp), len(y_comp), len(x_y_comp), sep=' ', end='\n')
-
     # magic happens here
     ncd = (len(x_y_comp) - min(len(x_comp), len(y_comp))) / max(len(x_comp), len(y_comp))
 
@@ -52,7 +51,7 @@ if __name__ == '__main__':
     dp=[]
     for id in collection_dict:
         if id != nft_id:
-            dp.append((1-ncd(collection_dict[id][0],collection_dict[nft_id][0]),collection_dict[id][1]))
+            dp.append((1-ncd(collection_dict[id][0],collection_dict[nft_id][0]),collection_dict[id][1])) #si nft_id pas dans la liste l'ajouter
     print(dp)
     price=sum([d * p for d, p in dp])/sum([d for d,_  in dp])
     print(price)
