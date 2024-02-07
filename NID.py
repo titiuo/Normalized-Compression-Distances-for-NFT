@@ -2,6 +2,7 @@ import requests
 import math
 from PIL import Image
 from io import BytesIO
+import matplotlib.pyplot as plt
 
 def proba(nft,combine=False):
     proba = 1
@@ -42,7 +43,7 @@ def NID(nft_1,nft_2,proba_1 = None,proba_2 = None):
     return NID
 
 
-collection_name = "okay_bears"
+collection_name = "sandbar"
 url_listings = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
 url_attributes = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
 url_holders = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/holder_stats"
@@ -90,7 +91,6 @@ for val in dic_attributes['Mouth'].values():
         c+=val
 print(c)
 #print(dic_attributes)'''
-dic_attributes['Mouth']['None']=0.1
 
 
 
@@ -112,6 +112,7 @@ image3.show(title=response.json()[3]['token']['name'])
 image4.show(title=response.json()[4]['token']['name'])
 image5.show(title=response.json()[5]['token']['name'])'''
 
+'''
 lf = 0
 p = 0
 sd = 0
@@ -138,3 +139,26 @@ for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en comp
 prix = p/sd
 print(prix)
 print(lf)
+'''
+prob=[]
+price=[]
+for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en compte les ventes
+    params = {"offset":20*i,"listingAggMode":True}
+    response = requests.get(url_listings, headers=headers,params=params)
+    # Coordonnées des points
+    prob += [proba(nft) for nft in response.json() if nft['price']<1000 and proba(nft)<1e-5]
+    price += [nft['price'] for nft in response.json() if nft['price']<1000 and proba(nft)<1e-5]
+
+
+# Création du graphique
+plt.scatter(prob, price)
+
+# Ajout de titres et de labels
+plt.title("Prix en fonction de la proba")
+plt.xlabel("proba")
+plt.ylabel("Prix")
+
+plt.xscale('log')
+plt.yscale('log')
+# Affichage du graphique
+plt.show()
