@@ -2,6 +2,7 @@ import requests
 import lzma
 import sys
 import re
+import pickle
 
 
 def getCollection(collection_name):
@@ -16,7 +17,7 @@ def getCollection(collection_name):
     response_stat = requests.get(url_stats, headers=headers)
     listed_count = int(response_stat.json()['listedCount'])
 
-    response_attribute = requests.get(url_attributs, headers=headers)
+    listed_count = 100
 
     for i in range(listed_count//100): #modifier le pas et filtrer les prix trop hauts / prendre en compte les ventes
         params = {"limit": 100,"offset":100*i}
@@ -33,8 +34,8 @@ def getCollection(collection_name):
     return dict
 
 
-def ncd(x,y): #autre idée utiliser la fréquence (proba des attributs) pour calculer la compléxité
-    x_y = x + y
+def ncd(x,y):
+    x_y = x + y  # the concatenation of files
 
     x_comp = lzma.compress(x)
     y_comp = lzma.compress(y)
@@ -44,14 +45,36 @@ def ncd(x,y): #autre idée utiliser la fréquence (proba des attributs) pour cal
 
     return ncd
 
+def len_dict(collection_name):
+    with open(collection_name,'rb') as f:
+        collection_dict = pickle.load(f)
+    return len(collection_dict)
+
+def see_in_dict(collection_name,id):
+    with open(collection_name,'rb') as f:
+        collection_dict = pickle.load(f)
+    return collection_dict[id]
+
+
 if __name__ == '__main__':
+    
     collection_name = sys.argv[1]
     nft_id = int(sys.argv[2])
-    collection_dict = getCollection(collection_name)
+    if sys.argv[3]=="y":
+        with open(collection_name,'rb') as f:
+            collection_dict = pickle.load(f)
+        print("ok")
+    else:
+        collection_dict = getCollection(collection_name)
+        #collection_dict_str={str(key): value for key,value in collection_dict.items()}
+        with open(collection_name,'wb') as f:
+            pickle.dump(collection_dict,f)
+            print("ok")
     dp=[]
     for id in collection_dict:
         if id != nft_id:
             dp.append((1-ncd(collection_dict[id][0],collection_dict[nft_id][0]),collection_dict[id][1])) #si nft_id pas dans la liste l'ajouter
-    print(dp)
+            print(id)
     price=sum([d * p for d, p in dp])/sum([d for d,_  in dp])
-    print(price)
+    print(f"Prix estimé : {price}\nPrix réelle : {see_in_dict(collection_name,nft_id)[1]}")
+    
