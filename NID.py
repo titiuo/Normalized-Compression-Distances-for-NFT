@@ -43,14 +43,18 @@ def NID(nft_1,nft_2,proba_1 = None,proba_2 = None):
 
 
 collection_name = "okay_bears"
-url = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
+url_listings = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
 url_attributes = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
 url_holders = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/holder_stats"
+url_stats = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/stats"
 
 headers = {"accept": "application/json"}
 
 response_holders = requests.get(url_holders, headers=headers)
 totalSupply = response_holders.json()['totalSupply']
+
+response_stats = requests.get(url_stats, headers=headers)
+listed_count = int(response_stats.json()['listedCount'])
 
 response_attributes = requests.get(url_attributes, headers=headers)
 
@@ -98,20 +102,23 @@ image3.show(title=response.json()[3]['token']['name'])
 image4.show(title=response.json()[4]['token']['name'])
 image5.show(title=response.json()[5]['token']['name'])'''
 
-
+lf = 0
 p = 0
 sd = 0
-for i in range(2): #modifier le pas et filtrer les prix trop hauts / prendre en compte les ventes
-    params = {"limit": 100,"offset":100*i}
-    response = requests.get(url, headers=headers,params=params)
+for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en compte les ventes
+    params = {"offset":20*i,"listingAggMode":True}
+    response = requests.get(url_listings, headers=headers,params=params)
     if i == 0:
         nft_1 = response.json()[0]
         proba_1 = proba(nft_1)
         print(nft_1['token']['name'])
-    for nft in response.json():#enelver le tout premier pour pas comparer avec lui même
+    for nft in response.json():
+        lf += 1
         print(nft['price'])
-        #if nft == nft_1:
-        #    continue
+        #if nft['price']>300:
+        #    break
+        if nft == nft_1:
+            continue
         d = 1 - NID(nft_1,nft,proba_1=proba_1)
         d = max(0,d)
         #print(d)
@@ -120,3 +127,4 @@ for i in range(2): #modifier le pas et filtrer les prix trop hauts / prendre en 
 
 prix = p/sd
 print(prix)
+print(lf)
