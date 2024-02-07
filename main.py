@@ -9,13 +9,14 @@ def getCollection(collection_name):
 
     url = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
     url_stats = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/stats"
+    url_attributs = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
 
     headers = {"accept": "application/json"}
 
     response_stat = requests.get(url_stats, headers=headers)
     listed_count = int(response_stat.json()['listedCount'])
 
-    listed_count = 100
+    response_attribute = requests.get(url_attributs, headers=headers)
 
     for i in range(listed_count//100): #modifier le pas et filtrer les prix trop hauts / prendre en compte les ventes
         params = {"limit": 100,"offset":100*i}
@@ -32,14 +33,13 @@ def getCollection(collection_name):
     return dict
 
 
-def ncd(x,y):
-    x_y = x + y  # the concatenation of files
+def ncd(x,y): #autre idée utiliser la fréquence (proba des attributs) pour calculer la compléxité
+    x_y = x + y
 
-    x_comp = lzma.compress(x)  # compress file 1
-    y_comp = lzma.compress(y)  # compress file 2
-    x_y_comp = lzma.compress(x_y)  # compress file concatenated
+    x_comp = lzma.compress(x)
+    y_comp = lzma.compress(y)
+    x_y_comp = lzma.compress(x_y)
 
-    # magic happens here
     ncd = (len(x_y_comp) - min(len(x_comp), len(y_comp))) / max(len(x_comp), len(y_comp))
 
     return ncd
