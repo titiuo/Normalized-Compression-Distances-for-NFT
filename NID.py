@@ -47,6 +47,7 @@ url_listings = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_na
 url_attributes = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
 url_holders = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/holder_stats"
 url_stats = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/stats"
+url_activities = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/activities"
 
 headers = {"accept": "application/json"}
 
@@ -55,6 +56,15 @@ totalSupply = response_holders.json()['totalSupply']
 
 response_stats = requests.get(url_stats, headers=headers)
 listed_count = int(response_stats.json()['listedCount'])
+
+
+'''for i in range(100):
+    params = {'limit':500,'offset':500*i}
+    response_activities = requests.get(url_activities, headers=headers,params=params)
+    for activity in response_activities.json():
+        if activity['type'] == 'Sale':
+            print(activity)
+exit()'''
 
 response_attributes = requests.get(url_attributes, headers=headers)
 
