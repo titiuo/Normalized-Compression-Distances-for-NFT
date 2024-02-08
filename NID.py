@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pickle
 import copy
+import sys
+import re
 
 def proba(nft,dic_attributes,combine=False):
     proba = 1
@@ -17,7 +19,11 @@ def proba(nft,dic_attributes,combine=False):
         if attribute['value'] == 'same':
             attribute_types.remove(attribute['trait_type'])
             continue
-        proba *= dic_attributes[attribute['trait_type']][attribute['value']]
+        try:
+            proba *= dic_attributes[str(attribute['trait_type'])][str(attribute['value'])]
+        except:
+            #print(dic_attributes[attribute['trait_type']])
+            print(attribute['trait_type'],attribute['value'])
         attribute_types.remove(attribute['trait_type'])
     attribute_types = set(attribute_types)
     for attribute_type in attribute_types:
@@ -136,7 +142,9 @@ def closer(collection_name,id):
             response = pickle.load(file)
     with open(f"{collection_name}_dist",'rb') as file:
             D = pickle.load(file)
-    nft = list(filter(lambda x: 'token' in x and 'name' in x['token'] and x['token']['name'] == f'sandbar #{id}', response))[0]
+    chaine =response[0]['token']['name']
+    mot = re.match(r'([^#]+)', chaine).group(1)
+    nft = list(filter(lambda x: 'token' in x and 'name' in x['token'] and x['token']['name'] == f'{mot}#{id}', response))[0]
 
     indice=response.index(nft)
     D=list(D[indice])
@@ -171,6 +179,11 @@ def f(d,a,b):
     return d
 
 if __name__ =='__main__':
+    with open(sys.argv[1],'rb') as file:
+            L = pickle.load(file)
+    closer(sys.argv[1],sys.argv[2])
+
+    #2936
     '''
     with open("sandbar",'rb') as file:
             L = pickle.load(file)
@@ -190,7 +203,6 @@ if __name__ =='__main__':
     print(f"Delta moyen = {np.mean(Deltas)}")
     Deltas_moy+=[np.mean(Deltas)]
     '''
-    closer("sandbar",2344)
 
 
     
