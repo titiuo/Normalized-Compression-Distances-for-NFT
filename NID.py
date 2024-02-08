@@ -131,43 +131,6 @@ def main(collection_name,id,a,b):
     indice=response.index(pos)
     return np.dot(f(D[indice],a,b),P)/sum(f(D[indice],a,b)),nft_1
 
-
-'''response = requests.get(url, headers=headers)
-print(NID(response.json()[1],response.json()[5]))
-print(NID(response.json()[1],response.json()[4]))
-print(NID(response.json()[1],response.json()[3]))
-
-r_img1 = requests.get(response.json()[1]['token']['image'], stream = True)
-r_img3 = requests.get(response.json()[3]['token']['image'], stream = True)
-r_img4 = requests.get(response.json()[4]['token']['image'], stream = True)
-r_img5 = requests.get(response.json()[5]['token']['image'], stream = True)
-image1 = Image.open(BytesIO(r_img1.content))
-image3 = Image.open(BytesIO(r_img3.content))
-image4 = Image.open(BytesIO(r_img4.content))
-image5 = Image.open(BytesIO(r_img5.content))
-image1.show(title=response.json()[1]['token']['name'])
-image3.show(title=response.json()[3]['token']['name'])
-image4.show(title=response.json()[4]['token']['name'])
-image5.show(title=response.json()[5]['token']['name'])'''
-
-
-'''
-prob=[]
-price=[]
-for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en compte les ventes
-    params = {"offset":20*i,"listingAggMode":True}
-    response = requests.get(url_listings, headers=headers,params=params)
-    # Coordonnées des points
-    prob += [proba(nft) for nft in response.json() if nft['price']<1000 and proba(nft)<1e-5]
-    price += [nft['price'] for nft in response.json() if nft['price']<1000 and proba(nft)<1e-5]
-'''
-
-'''
-dist=1-np.array(dist)
-delta_norm=np.array(delta)/max(delta)
-coefficients = np.polyfit(dist, delta_norm, 2)
-print(coefficients)
-'''
 def closer(collection_name,id):
     with open(collection_name,'rb') as file:
             response = pickle.load(file)
