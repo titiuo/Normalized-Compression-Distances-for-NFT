@@ -80,6 +80,7 @@ def Matrice_proba(collection_name,dic_attributes):
                 d = max(0,d)
                 M[i][j]=d
             j+=1
+            print(j)
         i+=1
     with open(f"{collection_name}_proba",'wb') as file:
             pickle.dump(M,file)
@@ -182,7 +183,6 @@ def graph(x,y):
 
 if __name__ =='__main__':
     dic_attributes=dic_attrib("sandbar")
-    print(dic_attributes)
     Matrice_proba("sandbar",dic_attributes)
     '''
     with open("sandbar",'rb') as file:
