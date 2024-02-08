@@ -104,15 +104,12 @@ def main(collection_name,id):
     for nft in response:
         #if nft['price']>300:
         #    break
-        print(nft['token']['name'])
         if nft != nft_1:
             d = 1 - NID(nft_1,nft,dic_attributes,proba_1=proba_1)
             d = max(0,d)
             sd += f(d)
             p += f(d)*nft['price']
-            dist+=[d]
-            delta+=[abs(nft_1['price']-nft['price'])]
-    return p/sd,delta,nft_1
+    return p/sd,nft_1
 
 
 '''response = requests.get(url, headers=headers)
@@ -164,7 +161,14 @@ def graph(x,y):
     plt.show()
 
 if __name__ =='__main__':
-    #response("sandbar")
-    prix,delta,nft_1=main("sandbar",2936)
-    print(f"Prix estimé :{prix}, Prix réelle :{nft_1['price']}")
-    print(f"Moyenne des deltas price: {np.mean(delta)}")
+    with open("sandbar",'rb') as file:
+            L = pickle.load(file)
+    Deltas=[]
+    for nft in L:
+        prix,nft_1=main("sandbar",nft['token']['name'].split("#")[-1].strip())
+        Delta=abs(prix-nft_1['price'])
+        print(f"Prix estimé :{prix}\nPrix réelle :{nft_1['price']}\nDelta = {Delta}")
+        Deltas+=[Delta]
+    print(f"Delta moyen = {np.mean(Deltas)}")
+
+    
