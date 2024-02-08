@@ -5,10 +5,15 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
 import pickle
+import copy
 
 def proba(nft,dic_attributes,combine=False):
     proba = 1
     attribute_types = list(dic_attributes.keys())
+    print(nft['token']['attributes'])
+    print(attribute_types)
+    print(nft['token']['name'])
+    print(combine)
     if combine:
         attribute_types*=2
     attributes = nft['token']['attributes']
@@ -17,6 +22,8 @@ def proba(nft,dic_attributes,combine=False):
             attribute_types.remove(attribute['trait_type'])
             continue
         proba *= dic_attributes[attribute['trait_type']][attribute['value']]
+        print(attribute_types)
+        print(attribute['trait_type'])
         attribute_types.remove(attribute['trait_type'])
     attribute_types = set(attribute_types)
     for attribute_type in attribute_types:
@@ -26,12 +33,13 @@ def proba(nft,dic_attributes,combine=False):
 def combine(nft_1,nft_2):
     attributes_1 = nft_1['token']['attributes']
     attributes_2 = nft_2['token']['attributes']
+    nft_3 = copy.deepcopy(nft_2)
     for attribute_1 in attributes_1:
         if attribute_1 not in attributes_2:
-            nft_2['token']['attributes'].append(attribute_1)
+            nft_3['token']['attributes'].append(attribute_1)
         else:
-            nft_2['token']['attributes'].append({'trait_type': attribute_1['trait_type'],'value':'same'})
-    return nft_2
+            nft_3['token']['attributes'].append({'trait_type': attribute_1['trait_type'],'value':'same'})
+    return nft_3
 
 def NID(nft_1,nft_2,dic_attributes,proba_1 = None,proba_2 = None):
     if not proba_1:
@@ -45,7 +53,7 @@ def NID(nft_1,nft_2,dic_attributes,proba_1 = None,proba_2 = None):
     return NID
 
 def f(d):
-    return d
+    return d**10*(np.exp(d)-1)/(np.exp(1)-1)
 
 def response(collection_name):
     url_listings = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
@@ -64,7 +72,25 @@ def response(collection_name):
     with open(collection_name,'wb') as f:
             pickle.dump(response,f)
 
-def main(collection_name,id):
+def Matrice_proba(collection_name,dic_attributes):
+    with open(collection_name,'rb') as file:
+            response = pickle.load(file)
+    n=len(response)
+    M=np.zeros((n, n))
+    i=0
+    j=0
+    for nft1 in response:
+        for nft2 in response :
+            if nft2 !=nft1 :
+                d = 1 - NID(nft1,nft2,dic_attributes)
+                d = max(0,d)
+                M[i][j]=d
+                j+=1
+        i+=1
+    with open(f"{collection_name}_proba",'wb') as file:
+            pickle.dump(M,file)
+
+def dic_attrib(collection_name):
     url_attributes = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
     url_holders = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/holder_stats"
 
@@ -75,7 +101,6 @@ def main(collection_name,id):
 
 
     response_attributes = requests.get(url_attributes, headers=headers)
-
     dic_attributes = {}
 
     for attribute in response_attributes.json()['results']['availableAttributes']:
@@ -90,12 +115,13 @@ def main(collection_name,id):
         for attribute_proba in attribute_type_dic.values():
             complementary -= attribute_proba
         attribute_type_dic['None'] = complementary
+    return dic_attributes
 
-    lf = 0
+def main(collection_name,id):
+
+    dic_attributes=dic_attrib(collection_name)
     p = 0
     sd = 0
-    dist=[]
-    delta=[]
     with open(collection_name,'rb') as file:
             response = pickle.load(file)
     nft_1 = list(filter(lambda x: 'token' in x and 'name' in x['token'] and x['token']['name'] == f'sandbar #{id}', response))[0]
@@ -161,6 +187,10 @@ def graph(x,y):
     plt.show()
 
 if __name__ =='__main__':
+    dic_attributes=dic_attrib("sandbar")
+    print(dic_attributes)
+    Matrice_proba("sandbar",dic_attributes)
+    '''
     with open("sandbar",'rb') as file:
             L = pickle.load(file)
     Deltas=[]
@@ -170,5 +200,6 @@ if __name__ =='__main__':
         print(f"Prix estimé :{prix}\nPrix réelle :{nft_1['price']}\nDelta = {Delta}")
         Deltas+=[Delta]
     print(f"Delta moyen = {np.mean(Deltas)}")
+    '''
 
     
