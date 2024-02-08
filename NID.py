@@ -4,6 +4,7 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 
 def proba(nft,dic_attributes,combine=False):
     proba = 1
@@ -46,20 +47,32 @@ def NID(nft_1,nft_2,dic_attributes,proba_1 = None,proba_2 = None):
 def f(d):
     return d
 
-def main(collection_name,id):
+def response(collection_name):
     url_listings = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
+    url_stats = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/stats"
+
+    headers = {"accept": "application/json"}
+
+    response_stats = requests.get(url_stats, headers=headers)
+    listed_count = int(response_stats.json()['listedCount'])
+
+    response=[]
+    for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en compte les ventes
+        params = {"offset":20*i,"listingAggMode":True}
+        response += requests.get(url_listings, headers=headers,params=params).json()
+    print("OK")
+    with open(collection_name,'wb') as f:
+            pickle.dump(response,f)
+
+def main(collection_name,id):
     url_attributes = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
     url_holders = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/holder_stats"
-    url_stats = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/stats"
-    url_activities = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/activities"
 
     headers = {"accept": "application/json"}
 
     response_holders = requests.get(url_holders, headers=headers)
     totalSupply = response_holders.json()['totalSupply']
 
-    response_stats = requests.get(url_stats, headers=headers)
-    listed_count = int(response_stats.json()['listedCount'])
 
     response_attributes = requests.get(url_attributes, headers=headers)
 
@@ -83,42 +96,23 @@ def main(collection_name,id):
     sd = 0
     dist=[]
     delta=[]
-    response=[]
-    for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en compte les ventes
-        params = {"offset":20*i,"listingAggMode":True}
-        response += requests.get(url_listings, headers=headers,params=params).json()
+    with open(collection_name,'rb') as file:
+            response = pickle.load(file)
     nft_1 = list(filter(lambda x: 'token' in x and 'name' in x['token'] and x['token']['name'] == f'sandbar #{id}', response))[0]
     proba_1 = proba(nft_1,dic_attributes)
     print(nft_1['token']['name'])
     for nft in response:
         #if nft['price']>300:
         #    break
+        print(nft['token']['name'])
         if nft != nft_1:
             d = 1 - NID(nft_1,nft,dic_attributes,proba_1=proba_1)
             d = max(0,d)
-            #print(d)
             sd += f(d)
             p += f(d)*nft['price']
             dist+=[d]
             delta+=[abs(nft_1['price']-nft['price'])]
     return p/sd,delta,nft_1
-
-'''for i in range(100):
-    params = {'limit':500,'offset':500*i}
-    response_activities = requests.get(url_activities, headers=headers,params=params)
-    for activity in response_activities.json():
-        if activity['type'] == 'Sale':
-            print(activity)
-exit()'''
-
-'''print(len(dic_attributes['Mouth']))
-c = 0
-for val in dic_attributes['Mouth'].values():
-    if val > 0:
-        c+=val
-print(c)
-#print(dic_attributes)'''
-
 
 
 '''response = requests.get(url, headers=headers)
@@ -170,6 +164,7 @@ def graph(x,y):
     plt.show()
 
 if __name__ =='__main__':
-    prix,delta,nft_1=main("sandbar",2926)
+    #response("sandbar")
+    prix,delta,nft_1=main("sandbar",2936)
     print(f"Prix estimé :{prix}, Prix réelle :{nft_1['price']}")
     print(f"Moyenne des deltas price: {np.mean(delta)}")
