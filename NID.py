@@ -47,7 +47,8 @@ def NID(nft_1,nft_2,dic_attributes,proba_1 = None,proba_2 = None):
     return NID
 
 def f(d):
-    return d**10*(np.exp(d)-1)/(np.exp(1)-1)
+    return d
+    #return d**10*(np.exp(d)-1)/(np.exp(1)-1)
 
 def response(collection_name):
     url_listings = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
@@ -66,7 +67,7 @@ def response(collection_name):
     with open(collection_name,'wb') as f:
             pickle.dump(response,f)
 
-def Matrice_proba(collection_name,dic_attributes):
+def Matrice(collection_name,dic_attributes):
     with open(collection_name,'rb') as file:
             response = pickle.load(file)
     n=len(response)
@@ -115,16 +116,27 @@ def dic_attrib(collection_name):
         attribute_type_dic['None'] = complementary
     return dic_attributes
 
+def file(collection_name,dic_attributes):
+    response(collection_name)
+    print("response OK")
+    Matrice(collection_name,dic_attributes)
+    print("Matrice OK")
+
+
 def main(collection_name,id):
 
-    dic_attributes=dic_attrib(collection_name)
-    p = 0
-    sd = 0
     with open(collection_name,'rb') as file:
             response = pickle.load(file)
-    nft_1 = list(filter(lambda x: 'token' in x and 'name' in x['token'] and x['token']['name'] == f'sandbar #{id}', response))[0]
-    proba_1 = proba(nft_1,dic_attributes)
-    print(nft_1['token']['name'])
+    with open(f"{collection_name}_dist",'rb') as file:
+            D = pickle.load(file)
+    with open(f"{collection_name}_price",'rb') as file:
+            P = pickle.load(file)
+    pos = list(filter(lambda x: 'token' in x and 'name' in x['token'] and x['token']['name'] == f'sandbar #{id}', response))[0]
+    nft_1=pos
+    indice=response.index(pos)
+    #proba_1 = proba(nft_1,dic_attributes)
+    #print(nft_1['token']['name'])
+    '''
     for nft in response:
         #if nft['price']>300:
         #    break
@@ -133,7 +145,8 @@ def main(collection_name,id):
             d = max(0,d)
             sd += f(d)
             p += f(d)*nft['price']
-    return p/sd,nft_1
+    '''
+    return np.dot(f(D[indice]),P)/sum(f(D[indice])),nft_1
 
 
 '''response = requests.get(url, headers=headers)
@@ -185,8 +198,9 @@ def graph(x,y):
     plt.show()
 
 if __name__ =='__main__':
-    dic_attributes=dic_attrib("sandbar")
-    Matrice_proba("sandbar",dic_attributes)
+    prix,nft_1=main("sandbar",1773)
+    Delta=abs(prix-nft_1['price'])
+    print(f"Prix estimé :{prix}\nPrix réelle :{nft_1['price']}\nDelta = {Delta}")
     '''
     with open("sandbar",'rb') as file:
             L = pickle.load(file)
