@@ -75,7 +75,7 @@ if __name__ == '__main__':
     a=0
     n=len_dict(collection_name)
     for id in collection_dict:
-        if collection_dict[id][1] < 1000:
+        if id != nft_id:
             dp.append((1-ncd(collection_dict[id][0],collection_dict[nft_id][0]),collection_dict[id][1])) #si nft_id pas dans la liste l'ajouter
             percent=i*100/n
             if percent>L[a]:

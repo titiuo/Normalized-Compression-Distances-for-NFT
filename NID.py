@@ -10,10 +10,6 @@ import copy
 def proba(nft,dic_attributes,combine=False):
     proba = 1
     attribute_types = list(dic_attributes.keys())
-    print(nft['token']['attributes'])
-    print(attribute_types)
-    print(nft['token']['name'])
-    print(combine)
     if combine:
         attribute_types*=2
     attributes = nft['token']['attributes']
@@ -22,8 +18,6 @@ def proba(nft,dic_attributes,combine=False):
             attribute_types.remove(attribute['trait_type'])
             continue
         proba *= dic_attributes[attribute['trait_type']][attribute['value']]
-        print(attribute_types)
-        print(attribute['trait_type'])
         attribute_types.remove(attribute['trait_type'])
     attribute_types = set(attribute_types)
     for attribute_type in attribute_types:
@@ -85,7 +79,7 @@ def Matrice_proba(collection_name,dic_attributes):
                 d = 1 - NID(nft1,nft2,dic_attributes)
                 d = max(0,d)
                 M[i][j]=d
-                j+=1
+            j+=1
         i+=1
     with open(f"{collection_name}_proba",'wb') as file:
             pickle.dump(M,file)
