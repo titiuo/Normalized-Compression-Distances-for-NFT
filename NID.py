@@ -3,8 +3,9 @@ import math
 from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
+import numpy as np
 
-def proba(nft,combine=False):
+def proba(nft,dic_attributes,combine=False):
     proba = 1
     attribute_types = list(dic_attributes.keys())
     if combine:
@@ -31,33 +32,76 @@ def combine(nft_1,nft_2):
             nft_2['token']['attributes'].append({'trait_type': attribute_1['trait_type'],'value':'same'})
     return nft_2
 
-def NID(nft_1,nft_2,proba_1 = None,proba_2 = None):
+def NID(nft_1,nft_2,dic_attributes,proba_1 = None,proba_2 = None):
     if not proba_1:
-        proba_1 = proba(nft_1)
+        proba_1 = proba(nft_1,dic_attributes)
     if not proba_2:
-        proba_2 = proba(nft_2)
-    proba_12 = proba(combine(nft_1,nft_2),combine=True)
+        proba_2 = proba(nft_2,dic_attributes)
+    proba_12 = proba(combine(nft_1,nft_2),dic_attributes,combine=True)
 
     NID = -(max(math.log2(proba_1),math.log2(proba_2)) - math.log2(proba_12))/(min(math.log2(proba_1),math.log2(proba_2)))
 
     return NID
 
+def f(d):
+    return d
 
-collection_name = "sandbar"
-url_listings = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
-url_attributes = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
-url_holders = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/holder_stats"
-url_stats = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/stats"
-url_activities = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/activities"
+def main(collection_name,id):
+    url_listings = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/listings"
+    url_attributes = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
+    url_holders = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/holder_stats"
+    url_stats = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/stats"
+    url_activities = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/activities"
 
-headers = {"accept": "application/json"}
+    headers = {"accept": "application/json"}
 
-response_holders = requests.get(url_holders, headers=headers)
-totalSupply = response_holders.json()['totalSupply']
+    response_holders = requests.get(url_holders, headers=headers)
+    totalSupply = response_holders.json()['totalSupply']
 
-response_stats = requests.get(url_stats, headers=headers)
-listed_count = int(response_stats.json()['listedCount'])
+    response_stats = requests.get(url_stats, headers=headers)
+    listed_count = int(response_stats.json()['listedCount'])
 
+    response_attributes = requests.get(url_attributes, headers=headers)
+
+    dic_attributes = {}
+
+    for attribute in response_attributes.json()['results']['availableAttributes']:
+        if attribute['attribute']['trait_type'] == 'Attributes Count':
+            continue
+        elif attribute['attribute']['trait_type'] not in dic_attributes:
+            dic_attributes[attribute['attribute']['trait_type']] = {}
+        dic_attributes[attribute['attribute']['trait_type']][attribute['attribute']['value']] = (attribute['countByListingType']['1'] + attribute['countByListingType']['2'])/totalSupply
+
+    for attribute_type_dic in dic_attributes.values():
+        complementary = 1
+        for attribute_proba in attribute_type_dic.values():
+            complementary -= attribute_proba
+        attribute_type_dic['None'] = complementary
+
+    lf = 0
+    p = 0
+    sd = 0
+    dist=[]
+    delta=[]
+    response=[]
+    for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en compte les ventes
+        params = {"offset":20*i,"listingAggMode":True}
+        response += requests.get(url_listings, headers=headers,params=params).json()
+    nft_1 = list(filter(lambda x: 'token' in x and 'name' in x['token'] and x['token']['name'] == f'sandbar #{id}', response))[0]
+    proba_1 = proba(nft_1,dic_attributes)
+    print(nft_1['token']['name'])
+    for nft in response:
+        #if nft['price']>300:
+        #    break
+        if nft != nft_1:
+            d = 1 - NID(nft_1,nft,dic_attributes,proba_1=proba_1)
+            d = max(0,d)
+            #print(d)
+            sd += f(d)
+            p += f(d)*nft['price']
+            dist+=[d]
+            delta+=[abs(nft_1['price']-nft['price'])]
+    return p/sd,delta,nft_1
 
 '''for i in range(100):
     params = {'limit':500,'offset':500*i}
@@ -66,23 +110,6 @@ listed_count = int(response_stats.json()['listedCount'])
         if activity['type'] == 'Sale':
             print(activity)
 exit()'''
-
-response_attributes = requests.get(url_attributes, headers=headers)
-
-dic_attributes = {}
-
-for attribute in response_attributes.json()['results']['availableAttributes']:
-    if attribute['attribute']['trait_type'] == 'Attributes Count':
-        continue
-    elif attribute['attribute']['trait_type'] not in dic_attributes:
-        dic_attributes[attribute['attribute']['trait_type']] = {}
-    dic_attributes[attribute['attribute']['trait_type']][attribute['attribute']['value']] = (attribute['countByListingType']['1'] + attribute['countByListingType']['2'])/totalSupply
-
-for attribute_type_dic in dic_attributes.values():
-    complementary = 1
-    for attribute_proba in attribute_type_dic.values():
-        complementary -= attribute_proba
-    attribute_type_dic['None'] = complementary
 
 '''print(len(dic_attributes['Mouth']))
 c = 0
@@ -112,33 +139,7 @@ image3.show(title=response.json()[3]['token']['name'])
 image4.show(title=response.json()[4]['token']['name'])
 image5.show(title=response.json()[5]['token']['name'])'''
 
-'''
-lf = 0
-p = 0
-sd = 0
-for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en compte les ventes
-    params = {"offset":20*i,"listingAggMode":True}
-    response = requests.get(url_listings, headers=headers,params=params)
-    if i == 0:
-        nft_1 = response.json()[0]
-        proba_1 = proba(nft_1)
-        print(nft_1['token']['name'])
-    for nft in response.json():
-        lf += 1
-        print(nft['price'])
-        #if nft['price']>300:
-        #    break
-        if nft == nft_1:
-            continue
-        d = 1 - NID(nft_1,nft,proba_1=proba_1)
-        d = max(0,d)
-        #print(d)
-        sd += d
-        p += d*nft['price']
 
-prix = p/sd
-print(prix)
-print(lf)
 '''
 prob=[]
 price=[]
@@ -148,17 +149,27 @@ for i in range(listed_count//20): #filtrer les prix trop hauts / prendre en comp
     # Coordonnées des points
     prob += [proba(nft) for nft in response.json() if nft['price']<1000 and proba(nft)<1e-5]
     price += [nft['price'] for nft in response.json() if nft['price']<1000 and proba(nft)<1e-5]
+'''
 
+'''
+dist=1-np.array(dist)
+delta_norm=np.array(delta)/max(delta)
+coefficients = np.polyfit(dist, delta_norm, 2)
+print(coefficients)
+'''
 
-# Création du graphique
-plt.scatter(prob, price)
+def graph(x,y):
+    plt.scatter(x, y)
+    plt.title("Prix en fonction de la proba")
+    plt.xlabel("distance")
+    plt.ylabel("delta")
 
-# Ajout de titres et de labels
-plt.title("Prix en fonction de la proba")
-plt.xlabel("proba")
-plt.ylabel("Prix")
+    plt.xscale('log')
+    plt.yscale('log')
 
-plt.xscale('log')
-plt.yscale('log')
-# Affichage du graphique
-plt.show()
+    plt.show()
+
+if __name__ =='__main__':
+    prix,delta,nft_1=main("sandbar",2926)
+    print(f"Prix estimé :{prix}, Prix réelle :{nft_1['price']}")
+    print(f"Moyenne des deltas price: {np.mean(delta)}")
