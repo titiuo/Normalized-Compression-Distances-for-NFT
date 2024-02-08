@@ -70,20 +70,23 @@ def Matrice_proba(collection_name,dic_attributes):
     with open(collection_name,'rb') as file:
             response = pickle.load(file)
     n=len(response)
-    M=np.zeros((n, n))
+    D=np.zeros((n, n))
+    P=np.zeros(n)
     i=0
-    j=0
     for nft1 in response:
+        j=0
         for nft2 in response :
             if nft2 !=nft1 :
                 d = 1 - NID(nft1,nft2,dic_attributes)
                 d = max(0,d)
-                M[i][j]=d
+                D[i][j]=d
             j+=1
-            print(j)
+        P[i]=nft1['price']
         i+=1
-    with open(f"{collection_name}_proba",'wb') as file:
-            pickle.dump(M,file)
+    with open(f"{collection_name}_dist",'wb') as file:
+        pickle.dump(D,file)
+    with open(f"{collection_name}_price",'wb') as file:
+        pickle.dump(P,file)
 
 def dic_attrib(collection_name):
     url_attributes = f"https://api-mainnet.magiceden.dev/v2/collections/{collection_name}/attributes"
