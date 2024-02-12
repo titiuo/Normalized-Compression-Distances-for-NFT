@@ -240,7 +240,6 @@ if __name__ =='__main__':
             prix2,nft_1=forecast_price(sys.argv[1],nft['token']['name'].split("#")[-1].strip(),a,b)
             Delta2=abs(prix2-nft_1['price'])
             Deltas2+=[Delta2]
-
     print(f"Delta moyen stratégie prix minimum des {x} plus proches voisins : {np.mean(Deltas)}, erreur relative : {np.mean(Deltas)/np.mean(np.array(prices))}")
     print(f"Delta moyen stratégie prix poids adaptés par la fonction f : {np.mean(Deltas2)}, erreur relative : {np.mean(Deltas2)/np.mean(np.array(prices))}")
     
