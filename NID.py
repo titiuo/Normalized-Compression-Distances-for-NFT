@@ -125,7 +125,7 @@ def file(collection_name,dic_attributes):
     print("Matrice OK")
 
 
-def main(collection_name,id,a,b):
+def moy_price(collection_name,id,a,b):
     with open(collection_name,'rb') as file:
             response = pickle.load(file)
     with open(f"{collection_name}_dist",'rb') as file:
@@ -137,72 +137,119 @@ def main(collection_name,id,a,b):
     indice=response.index(pos)
     return np.dot(f(D[indice],a,b),P)/sum(f(D[indice],a,b)),nft_1
 
-def closer(collection_name,id):
+def closer_price(collection_name,id,x):
+    print(id)
+    nft,couple_min=closers(collection_name,id,x)
+    return couple_min[1]
+
+
+def closers(collection_name,id,x=1,show=False):
     with open(collection_name,'rb') as file:
             response = pickle.load(file)
     with open(f"{collection_name}_dist",'rb') as file:
             D = pickle.load(file)
+    with open(f"{collection_name}_price",'rb') as file:
+            P = pickle.load(file)
     chaine =response[0]['token']['name']
     mot = re.match(r'([^#]+)', chaine).group(1)
     nft = list(filter(lambda x: 'token' in x and 'name' in x['token'] and x['token']['name'] == f'{mot}#{id}', response))[0]
 
     indice=response.index(nft)
     D=list(D[indice])
-    nft_min=response[D.index(max(D))]
-    D[indice]=0.5
-    nft_max=response[D.index(min(D))]
+    if x==1:
+        nft_min=response[D.index(max(D))]
+        ind_min=response.index(nft_min)
+        if show :
+            show_image(nft)
+            show_image(nft_min)
+        return nft,(nft_min,P[ind_min])
+    else:
+        ind_mins=np.argsort(D)[::-1][:x]
+        nft_mins=[]
+        prices=[]
+        for ind_min in ind_mins:
+            nft_mins+=[response[int(ind_min)]]
+            prices+=[P[int(ind_min)]]
+        if show:
+            show_image(nft)
+            for nft_min in nft_mins:
+                show_image(nft_min)
+        return nft,(nft_mins,prices)
+
+def show_image(nft):
     r_img1 = requests.get(nft['token']['image'], stream = True)
     image1 = Image.open(BytesIO(r_img1.content))
     image1.show(title="")
-    r_img2 = requests.get(nft_min['token']['image'], stream = True)
-    image2 = Image.open(BytesIO(r_img2.content))
-    image2.show(title="")
-    r_img3 = requests.get(nft_max['token']['image'], stream = True)
-    image3 = Image.open(BytesIO(r_img3.content))
-    image3.show(title="")
-     
 
 def graph(x,y):
     plt.scatter(x, y)
-    plt.title("Prix en fonction de la proba")
-    plt.xlabel("distance")
-    plt.ylabel("delta")
+    Y=[f(d) for d in np.linspace(0,1,100)]
+    plt.plot(np.linspace(0,1,100),Y,'red')
+    plt.title("Erreur absolue en fonction de la distance")
+    plt.xlabel("Distance")
+    plt.ylabel("Delta prix")
+    plt.ylim(0, 30)
+    plt.xlim(0, 0.65)
 
-    plt.xscale('log')
-    plt.yscale('log')
+    #plt.xscale('log')
+    #plt.yscale('log')
 
     plt.show()
 
-def f(d,a,b):
+def f(d):
     #return d
-    #return d**(a)*(np.exp(b*d)-1)/(np.exp(b)-1)
-    return d
+    return 300*d*(np.exp(5*d))/(np.exp(5))
 
 if __name__ =='__main__':
+    closers('sandbar',3123,2,True)
+    '''
     with open(sys.argv[1],'rb') as file:
             L = pickle.load(file)
-    closer(sys.argv[1],sys.argv[2])
-
+    dic=dic_attrib(sys.argv[1])
+    Deltas=[]
+    x=3
+    prob=[]
+    for nft in L:
+        if nft['price']<5:
+            if x==1:
+                 prix=closer_price(sys.argv[1],nft['token']['name'].split("#")[-1].strip(),x)
+            else:
+                 prix=min(closer_price(sys.argv[1],nft['token']['name'].split("#")[-1].strip(),x))
+            Delta=abs(prix-nft['price'])
+            Deltas+=[Delta]
+            print(f"Prix estimé :{prix}\nPrix réelle :{nft['price']}\nDelta = {Delta}")
+    graph(,Delta)
+    print(f"Delta moyen = {np.mean(Deltas)}")
+    #1527
     #2936
+    '''
     '''
     with open("sandbar",'rb') as file:
             L = pickle.load(file)
+    with open("sandbar_dist",'rb') as file:
+            D = pickle.load(file)
+    x=13
+    D=list(D[x])
+    D.pop(x)
     dic=dic_attrib("sandbar")
-    Deltas_moy=[]
     Deltas=[]
     p=[]
-    a=1/100
-    b=5
+    nft1=L[x]
+    L.pop(x)
     for nft in L:
-        prix,nft_1=main("sandbar",nft['token']['name'].split("#")[-1].strip(),a,b)
+         Deltas+=[abs(nft1['price']-nft['price'])]
+    '''
+    '''
+    for nft in L:
+        prix,nft_1=moy_price("sandbar",nft['token']['name'].split("#")[-1].strip(),a,b)
         Delta=abs(prix-nft_1['price'])
         #print(f"Prix estimé :{prix}\nPrix réelle :{nft_1['price']}\nDelta = {Delta}")
         Deltas+=[Delta]
         p+=[proba(nft,dic)]
-    graph(p,Deltas)
-    print(f"Delta moyen = {np.mean(Deltas)}")
-    Deltas_moy+=[np.mean(Deltas)]
     '''
+    graph(D,Deltas)
+    print(f"Delta moyen = {np.mean(Deltas)}")
+    
 
 
     
